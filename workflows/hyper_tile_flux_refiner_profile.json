@@ -1,0 +1,22 @@
+{
+  "name": "HyperTile FLUX Refiner Profile",
+  "description": "Optional third-stage profile for a FLUX tiled refinement pass after the SDXL workflow.",
+  "model_family": "FLUX.1-dev",
+  "controlnet": "flux_controlnet_union_pro.safetensors",
+  "control_mode": "tile",
+  "recommended": {
+    "tile_width": 512,
+    "tile_height": 512,
+    "denoise": 0.18,
+    "cfg": 3.5,
+    "steps": 18,
+    "controlnet_strength": 0.45,
+    "mask_blur": 12,
+    "tile_padding": 64,
+    "notes": [
+      "Keep the input to this stage already upscaled and composition-locked.",
+      "Use FLUX only for the final coherence pass, not for the first 4x jump.",
+      "On 12-16 GB cards keep tiles at 512 and batch size at 1."
+    ]
+  }
+}
