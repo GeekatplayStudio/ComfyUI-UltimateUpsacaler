@@ -995,10 +995,10 @@
   "extra": {
     "frontendVersion": "1.42.8",
     "info": {
-      "name": "HyperTile SDXL Upscaler",
-      "author": "GitHub Copilot",
-      "description": "Two-stage upscale workflow: pixel upscaler followed by Ultimate SD Upscale tiled denoise.",
-      "version": "0.1.0",
+      "name": "Geekatplay Studio HyperTile SDXL Upscaler",
+      "author": "Geekatplay Studio",
+      "description": "Geekatplay Studio SDXL production workflow with automatic size planning, neural resize, and Ultimate SD Upscale tiled denoise.",
+      "version": "0.2.0",
       "created": "2026-03-25",
       "modified": "2026-03-25",
       "software": "ComfyUI"

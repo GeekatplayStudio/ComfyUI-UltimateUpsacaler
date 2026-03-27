@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-hyper-tile-upscaler"
 version = "0.1.0"
-description = "Single-click tiled generative upscale helpers for ComfyUI"
+description = "Geekatplay Studio tiled generative upscale helpers for ComfyUI"
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24.0",

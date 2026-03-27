@@ -1588,10 +1588,10 @@
   "extra": {
     "frontendVersion": "1.42.8",
     "info": {
-      "name": "HyperTile FLUX Tiled Refiner",
-      "author": "GitHub Copilot",
-      "description": "Aspect-preserving FLUX tiled refinement workflow with automatic size planning, neural resize, and Union ControlNet in tile mode.",
-      "version": "0.1.0",
+      "name": "Geekatplay Studio HyperTile FLUX Tiled Refiner",
+      "author": "Geekatplay Studio",
+      "description": "Geekatplay Studio FLUX tiled refinement workflow with automatic size planning, neural resize, and Union ControlNet tile mode.",
+      "version": "0.2.0",
       "created": "2026-03-25",
       "modified": "2026-03-25",
       "software": "ComfyUI"

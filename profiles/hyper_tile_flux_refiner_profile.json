@@ -1,7 +1,12 @@
 {
-  "name": "HyperTile FLUX Refiner Profile",
-  "description": "Optional third-stage profile for a FLUX tiled refinement pass after the SDXL workflow.",
+  "name": "Geekatplay Studio HyperTile FLUX Refiner Profile",
+  "author": "Geekatplay Studio",
+  "description": "Optional third-stage FLUX refinement profile for the Geekatplay Studio tiled upscale pipeline.",
   "model_family": "FLUX.1-dev",
+  "supported_checkpoints": [
+    "flux1-dev-fp8.safetensors",
+    "flux1-schnell-fp8.safetensors"
+  ],
   "controlnet": "flux_controlnet_union_pro.safetensors",
   "control_mode": "tile",
   "recommended": {
@@ -16,7 +21,8 @@
     "notes": [
       "Keep the input to this stage already upscaled and composition-locked.",
       "Use FLUX only for the final coherence pass, not for the first 4x jump.",
-      "On 12-16 GB cards keep tiles at 512 and batch size at 1."
+      "On 12-16 GB cards keep tiles at 512 and batch size at 1.",
+      "Use FLUX schnell when you want a faster validation pass before running FLUX dev."
     ]
   }
 }

@@ -253,7 +253,7 @@ class HyperTilePlanner:
         "preview_text",
     )
     FUNCTION = "plan"
-    CATEGORY = "HyperTile/Upscale"
+    CATEGORY = f"{BRAND_ROOT}/Upscale"
 
     def plan(
         self,
@@ -376,7 +376,7 @@ class HyperTileCaptionTiles:
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("prompt", "captions")
     FUNCTION = "caption_tiles"
-    CATEGORY = "HyperTile/Captioning"
+    CATEGORY = f"{BRAND_ROOT}/Captioning"
 
     def caption_tiles(
         self,
@@ -436,7 +436,7 @@ class HyperTilePromptComposer:
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("prompt",)
     FUNCTION = "compose"
-    CATEGORY = "HyperTile/Captioning"
+    CATEGORY = f"{BRAND_ROOT}/Captioning"
 
     def compose(
         self,
@@ -480,7 +480,7 @@ class HyperTileResizeImage:
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("image",)
     FUNCTION = "resize"
-    CATEGORY = "HyperTile/Upscale"
+    CATEGORY = f"{BRAND_ROOT}/Upscale"
 
     def resize(self, image: torch.Tensor, target_width: int, target_height: int, method: str):
         if image.shape[1] == target_height and image.shape[2] == target_width:
@@ -511,7 +511,7 @@ class HyperTileTilePreview:
     RETURN_TYPES = ("IMAGE", "STRING")
     RETURN_NAMES = ("preview", "summary")
     FUNCTION = "preview"
-    CATEGORY = "HyperTile/Upscale"
+    CATEGORY = f"{BRAND_ROOT}/Upscale"
 
     def preview(
         self,
@@ -563,7 +563,7 @@ class HyperTileRegionalConditioning:
     RETURN_TYPES = ("CONDITIONING", "STRING")
     RETURN_NAMES = ("conditioning", "debug_prompts")
     FUNCTION = "build_conditioning"
-    CATEGORY = "HyperTile/Conditioning"
+    CATEGORY = f"{BRAND_ROOT}/Conditioning"
 
     def build_conditioning(
         self,
@@ -633,10 +633,10 @@ NODE_CLASS_MAPPINGS: Dict[str, object] = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "HyperTilePlanner": "HyperTile Planner",
-    "HyperTileCaptionTiles": "HyperTile Caption Tiles",
-    "HyperTilePromptComposer": "HyperTile Prompt Composer",
-    "HyperTileResizeImage": "HyperTile Resize Image",
-    "HyperTileTilePreview": "HyperTile Tile Preview",
-    "HyperTileRegionalConditioning": "HyperTile Regional Conditioning",
+    "HyperTilePlanner": "Geekatplay HyperTile Planner",
+    "HyperTileCaptionTiles": "Geekatplay HyperTile Caption Tiles",
+    "HyperTilePromptComposer": "Geekatplay HyperTile Prompt Composer",
+    "HyperTileResizeImage": "Geekatplay HyperTile Resize Image",
+    "HyperTileTilePreview": "Geekatplay HyperTile Tile Preview",
+    "HyperTileRegionalConditioning": "Geekatplay HyperTile Regional Conditioning",
 }

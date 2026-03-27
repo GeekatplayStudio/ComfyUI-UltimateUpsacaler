@@ -1,14 +1,15 @@
-# ComfyUI HyperTile Upscaler
+# Geekatplay Studio HyperTile Upscaler For ComfyUI
 
-This repository is a ComfyUI custom-node package plus installer bundle for large-format generative upscaling.
+This repository packages the Geekatplay Studio tiled upscaling stack for ComfyUI: installer, helper nodes, and ready-to-import workflows for SDXL and FLUX refinement.
 
 Repository target: `GeekatplayStudio/ComfyUI-UltimateUpsacaler`
 
-It ships three things:
+It ships four pieces:
 
-- A single-click installer that clones the missing custom nodes and downloads the core upscaler, FLUX checkpoint, and controlnet assets into the active ComfyUI install.
-- Custom helper nodes for tile planning and caption-guided prompt construction.
-- Ready-to-import SDXL and FLUX workflows for the resize and tiled denoise stages, plus a separate FLUX refiner profile.
+- A single-click installer that clones the missing custom nodes and downloads the core model stack into the active ComfyUI install.
+- Geekatplay Studio helper nodes for tile planning, Florence-2 caption extraction, prompt composition, resize staging, tile preview, and regional conditioning.
+- A production SDXL upscale workflow for the initial large-format pass.
+- A FLUX tiled refiner workflow plus a separate FLUX refiner profile for the optional finishing pass.
 
 ## What It Builds
 
@@ -16,23 +17,23 @@ The default flow is:
 
 1. Stage 1 neural resize with `4x-UltraSharp` or `RealESRGAN_x4plus`.
 2. Stage 2 tiled img2img refinement with `UltimateSDUpscaleNoUpscale`.
-3. Optional Stage 3 FLUX refinement using the profile in `profiles/hyper_tile_flux_refiner_profile.json`.
+3. Optional Stage 3 FLUX refinement using `workflows/hyper_tile_flux_tiled_refiner.json` or the profile in `profiles/hyper_tile_flux_refiner_profile.json`.
 
 The tiled stage is set up around low denoise, Gaussian-style edge blending through mask blur and padding, and tiled decode to stay stable on 12-16 GB GPUs.
 
 ## Included Nodes
 
-- `HyperTile Planner`
+- `Geekatplay HyperTile Planner`
   - Detects the input image size, computes target output size from long edge, magnification, or exact dimensions, and recommends tile size, denoise, and tiled decode settings.
-- `HyperTile Caption Tiles`
+- `Geekatplay HyperTile Caption Tiles`
   - Optionally uses Florence-2 through `transformers` to caption the input image or tile batch and extract texture-aware prompt cues. The bundled workflows default this to `disabled` to avoid Hugging Face warning spam unless you explicitly enable captioning.
-- `HyperTile Prompt Composer`
+- `Geekatplay HyperTile Prompt Composer`
   - Merges the user prompt, tile caption prompt, and a quality suffix into a single deduplicated prompt string.
-- `HyperTile Resize Image`
+- `Geekatplay HyperTile Resize Image`
   - Resizes the stage-1 upscaled image to the exact planned output size before tiled denoise.
-- `HyperTile Tile Preview`
+- `Geekatplay HyperTile Tile Preview`
   - Builds a preview overlay that shows the planned output resolution and tile boundaries before the tiled stage runs.
-- `HyperTile Regional Conditioning`
+- `Geekatplay HyperTile Regional Conditioning`
   - Converts TTP tile positions plus caption lines into area-weighted conditioning blocks for spatial prompt control.
 
 ## Single-Click Install
@@ -77,12 +78,22 @@ The installer will:
 
 - install this package's Python requirements
 - clone `ComfyUI-Manager`, `ComfyUI_UltimateSDUpscale`, and `Comfyui_TTP_Toolset` into `ComfyUI/custom_nodes`
-- download `4x-UltraSharp`, `RealESRGAN_x4plus`, and the SDXL tile controlnet
-- download `flux1-dev-fp8.safetensors` into `ComfyUI/models/checkpoints`
-- download `flux_controlnet_union_pro.safetensors` into `ComfyUI/models/controlnet`
+- download `4x-UltraSharp`, `RealESRGAN_x4plus`, `realesr-general-x4v3`, `sdxl_base_1.0.safetensors`, and the SDXL tile controlnet
+- optionally download `flux1-dev-fp8.safetensors`, `flux1-schnell-fp8.safetensors`, and `flux_controlnet_union_pro.safetensors`
 - optionally copy a local FLUX fp8 checkpoint into `models/checkpoints/flux1-dev-fp8.safetensors` instead of downloading it
 
+If a remote host blocks direct model download because of license acceptance or authentication rules, the installer now prints the exact manual fallback source instead of failing mid-run without context.
+
 The default launcher scripts now perform the complete model install in one click. If you run `install.py` directly, include `--with-flux-assets` to download the FLUX assets automatically.
+
+## Workflow Pack
+
+- `workflows/hyper_tile_sdxl.json`
+  - Geekatplay Studio SDXL production workflow for Stage 1 resize plus Stage 2 tiled denoise.
+- `workflows/hyper_tile_flux_tiled_refiner.json`
+  - Geekatplay Studio FLUX tiled refinement workflow for full tile batch sampling and assembly.
+- `profiles/hyper_tile_flux_refiner_profile.json`
+  - FLUX settings profile for users who want to wire the final pass into their own ComfyUI graph.
 
 ## Workflow
 
@@ -91,7 +102,7 @@ Import `workflows/hyper_tile_sdxl.json` into ComfyUI.
 What to set after import:
 
 1. Select your source image in `LoadImage`.
-2. Pick an SDXL checkpoint in `CheckpointLoaderSimple`.
+2. Confirm the SDXL checkpoint you want is selected in `CheckpointLoaderSimple`.
 3. Adjust the base prompt in `HyperTile Prompt Composer`.
 4. In `HyperTile Planner`, choose `sizing_mode`:
   - `target_long_edge` to drive output from the longest side
@@ -120,15 +131,15 @@ What it does:
 4. Shows a tile layout preview so you can verify the cut lines before sampling.
 5. Splits the resized image into a batched tile set with `TTP_Image_Tile_Batch`.
 6. Captions the tile batch with Florence-2 and merges those cues into the positive prompt.
-7. Loads the fp8 FLUX dev checkpoint with `CheckpointLoaderSimple`.
+7. Loads the fp8 FLUX checkpoint with `CheckpointLoaderSimple`.
 8. Applies `flux_controlnet_union_pro.safetensors` through `SetUnionControlNetType` with the type fixed to `tile`.
 9. VAE-encodes each resized tile batch and samples from that encoded latent instead of starting from an empty latent.
 10. Reassembles the refined tiles with `TTP_Image_Assy`.
 
 Important limits:
 
-- This workflow expects the FLUX fp8 checkpoint file in `models/checkpoints/flux1-dev-fp8.safetensors`.
-- It also expects the FLUX union controlnet downloaded with `--with-flux-assets`.
+- This workflow is designed around `flux1-dev-fp8.safetensors`, but `flux1-schnell-fp8.safetensors` is also supported for faster passes.
+- It expects the FLUX assets downloaded with `--with-flux-assets` unless you have already placed the exact filenames manually.
 - The SDXL workflow defaults to `sd_xl_base_1.0_0.9vae.safetensors`, which matches a common ComfyUI SDXL checkpoint filename.
 - The tiled FLUX workflow currently uses one merged positive prompt across the tile batch. The `HyperTile Regional Conditioning` node is included for more advanced spatial prompting, but it is not wired into the default FLUX graph because batch-wise regional prompt control is still model- and graph-dependent.
 
@@ -149,12 +160,19 @@ Recommended use:
 
 If you want the actual ComfyUI graph for that stage instead of only the profile, import `workflows/hyper_tile_flux_tiled_refiner.json`.
 
+## Help
+
+- Use the SDXL workflow for the first major upscale jump.
+- Use the FLUX workflow only after the image is already resized and composition-locked.
+- Keep tile size at `512` on 12-16 GB GPUs unless you have validated a larger tile budget locally.
+- Florence-2 will populate its cache on first use, so the first caption run is slower than later runs.
+
 ## Limits And Notes
 
 - `HyperTile Caption Tiles` downloads Florence-2 into the active Python cache the first time you run it, but the bundled workflows ship with captioning disabled by default.
 - The repeated `404`, unauthenticated Hugging Face, and Florence processor warnings come from the optional Florence caption model probing for alternate metadata files. They are not core ComfyUI model-loading errors.
 - The bundled workflow targets PNG-style image output. EXR and WebP export require additional save nodes or extensions in your ComfyUI install.
-- The bundled FLUX asset is optional because it is large and many users do not need a third refinement pass.
+- The bundled FLUX assets are optional because they are large and many users only need the SDXL production path.
 
 ## License
 

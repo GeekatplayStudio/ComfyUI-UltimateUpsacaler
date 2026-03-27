@@ -14,6 +14,7 @@ import urllib.request
 
 REPO_ROOT = Path(__file__).resolve().parent
 MANIFEST_PATH = REPO_ROOT / "manifests" / "dependencies.json"
+INSTALLER_NAME = "Geekatplay Studio HyperTile Installer"
 
 
 def load_manifest() -> dict:
@@ -151,7 +152,11 @@ def download_file(url: str, destination: Path) -> None:
         temp_path = Path(temp_file.name)
 
     try:
-        with urllib.request.urlopen(url) as response, temp_path.open("wb") as output_file:
+        request = urllib.request.Request(
+            url,
+            headers={"User-Agent": f"{INSTALLER_NAME}/0.1"},
+        )
+        with urllib.request.urlopen(request) as response, temp_path.open("wb") as output_file:
             shutil.copyfileobj(response, output_file)
         temp_path.replace(destination)
     finally:
@@ -194,7 +199,8 @@ def ensure_flux_checkpoint(
     copy_file(source_path, target_path, dry_run=dry_run)
 
 
-def ensure_models(comfy_root: Path, manifest: dict, with_flux_assets: bool, dry_run: bool) -> None:
+def ensure_models(comfy_root: Path, manifest: dict, with_flux_assets: bool, dry_run: bool) -> list[tuple[dict, str]]:
+    failures: list[tuple[dict, str]] = []
     for model in manifest["models"]:
         optional_group = model.get("optional_group")
         if optional_group == "flux" and not with_flux_assets:
@@ -210,23 +216,49 @@ def ensure_models(comfy_root: Path, manifest: dict, with_flux_assets: bool, dry_
         if dry_run:
             continue
 
-        download_file(model["url"], target_path)
+        try:
+            download_file(model["url"], target_path)
+        except Exception as exc:
+            reason = f"{type(exc).__name__}: {exc}"
+            print(f"[warn] download failed for {model['name']}: {reason}")
+            failures.append((model, reason))
+
+    return failures
 
 
-def print_manual_assets(manifest: dict) -> None:
-    print("\nManual assets:")
+def print_manual_assets(manifest: dict, download_failures: list[tuple[dict, str]]) -> None:
+    if not manifest.get("manual_assets") and not download_failures:
+        return
+
+    print("\nManual assets and follow-up:")
     for asset in manifest.get("manual_assets", []):
         print(f"- {asset['name']}")
         print(f"  why: {asset['why']}")
         print(f"  source: {asset['source']}")
 
+    for model, reason in download_failures:
+        print(f"- {model['name']}")
+        print(f"  why: automatic download failed ({reason})")
+        print(f"  source: {model.get('source', model['url'])}")
+
+
+def ensure_required_downloads(download_failures: list[tuple[dict, str]]) -> None:
+    required_failures = [model for model, _reason in download_failures if model.get("required")]
+    if required_failures:
+        names = ", ".join(model["name"] for model in required_failures)
+        raise SystemExit(f"Required assets still need manual installation: {names}")
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Install HyperTile Upscaler dependencies into ComfyUI.")
+    parser = argparse.ArgumentParser(description="Install Geekatplay Studio HyperTile dependencies into ComfyUI.")
     parser.add_argument("--comfyui", help="Path to the ComfyUI root directory.")
     parser.add_argument("--skip-nodes", action="store_true", help="Skip custom node cloning.")
     parser.add_argument("--skip-models", action="store_true", help="Skip model downloads.")
-    parser.add_argument("--with-flux-assets", action="store_true", help="Download the optional 6.6 GB FLUX ControlNet Union asset.")
+    parser.add_argument(
+        "--with-flux-assets",
+        action="store_true",
+        help="Download the optional FLUX checkpoints and FLUX Union ControlNet assets.",
+    )
     parser.add_argument(
         "--flux-checkpoint",
         help="Path to a local FLUX fp8 checkpoint to copy into ComfyUI/models/checkpoints/flux1-dev-fp8.safetensors.",
@@ -241,6 +273,7 @@ def main() -> None:
     comfy_root = discover_comfyui_root(args.comfyui)
     python_command = discover_comfyui_python(comfy_root)
 
+    print(INSTALLER_NAME)
     print(f"ComfyUI root: {comfy_root}")
     print(f"Python runtime: {' '.join(python_command)}")
     install_python_requirements(python_command, dry_run=args.dry_run)
@@ -248,16 +281,25 @@ def main() -> None:
     if not args.skip_nodes:
         ensure_custom_nodes(comfy_root, python_command, manifest, dry_run=args.dry_run)
 
+    download_failures: list[tuple[dict, str]] = []
     if not args.skip_models:
         ensure_flux_checkpoint(
             comfy_root,
             flux_checkpoint_path=args.flux_checkpoint,
             dry_run=args.dry_run,
         )
-        ensure_models(comfy_root, manifest, with_flux_assets=args.with_flux_assets, dry_run=args.dry_run)
+        download_failures = ensure_models(
+            comfy_root,
+            manifest,
+            with_flux_assets=args.with_flux_assets,
+            dry_run=args.dry_run,
+        )
 
-    print_manual_assets(manifest)
-    print("\nDone. Restart ComfyUI and import workflows/hyper_tile_sdxl.json.")
+    print_manual_assets(manifest, download_failures)
+    if not args.dry_run:
+        ensure_required_downloads(download_failures)
+
+    print("\nDone. Restart ComfyUI and import a workflow from workflows/.")
 
 
 if __name__ == "__main__":

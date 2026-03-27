@@ -26,6 +26,7 @@
     {
       "name": "4x-UltraSharp.pth",
       "url": "https://huggingface.co/lokCX/4x-Ultrasharp/resolve/main/4x-UltraSharp.pth?download=true",
+      "source": "https://huggingface.co/lokCX/4x-Ultrasharp",
       "directory": "models/upscale_models",
       "required": true,
       "size": "67 MB"
@@ -33,6 +34,7 @@
     {
       "name": "RealESRGAN_x4plus.pth",
       "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+      "source": "https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.1.0",
       "directory": "models/upscale_models",
       "required": true,
       "size": "64 MB"
@@ -40,31 +42,52 @@
     {
       "name": "realesr-general-x4v3.pth",
       "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth",
+      "source": "https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.2.5.0",
       "directory": "models/upscale_models",
       "required": false,
       "size": "17 MB"
     },
     {
+      "name": "sdxl_base_1.0.safetensors",
+      "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors?download=true",
+      "source": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
+      "directory": "models/checkpoints",
+      "required": true,
+      "size": "6.9 GB"
+    },
+    {
       "name": "controlnet_tile_sdxl_1_0.safetensors",
       "url": "https://huggingface.co/xinsir/controlnet-tile-sdxl-1.0/resolve/main/diffusion_pytorch_model.safetensors?download=true",
+      "source": "https://huggingface.co/xinsir/controlnet-tile-sdxl-1.0",
       "directory": "models/controlnet",
       "required": true,
       "size": "2.5 GB"
     },
     {
-      "name": "flux_controlnet_union_pro.safetensors",
-      "url": "https://huggingface.co/Shakker-Labs/FLUX.1-dev-ControlNet-Union-Pro/resolve/main/diffusion_pytorch_model.safetensors?download=true",
-      "directory": "models/controlnet",
-      "required": false,
-      "size": "6.6 GB",
-      "optional_group": "flux"
-    },
-    {
       "name": "flux1-dev-fp8.safetensors",
       "url": "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors?download=true",
+      "source": "https://huggingface.co/Comfy-Org/flux1-dev",
       "directory": "models/checkpoints",
       "required": false,
       "size": "17.2 GB",
+      "optional_group": "flux"
+    },
+    {
+      "name": "flux1-schnell-fp8.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors?download=true",
+      "source": "https://huggingface.co/Comfy-Org/flux1-schnell",
+      "directory": "models/checkpoints",
+      "required": false,
+      "size": "17.2 GB",
+      "optional_group": "flux"
+    },
+    {
+      "name": "flux_controlnet_union_pro.safetensors",
+      "url": "https://huggingface.co/Shakker-Labs/FLUX.1-dev-ControlNet-Union-Pro/resolve/main/diffusion_pytorch_model.safetensors?download=true",
+      "source": "https://huggingface.co/Shakker-Labs/FLUX.1-dev-ControlNet-Union-Pro",
+      "directory": "models/controlnet",
+      "required": false,
+      "size": "6.6 GB",
       "optional_group": "flux"
     }
   ],
@@ -73,6 +96,11 @@
       "name": "Florence-2 caption model cache",
       "why": "Downloaded automatically by transformers on first use so it can follow the active Python environment cache rules.",
       "source": "https://huggingface.co/microsoft/Florence-2-base-ft"
+    },
+    {
+      "name": "FLUX checkpoint fallback",
+      "why": "If the optional FLUX checkpoint download is blocked by license acceptance or Hugging Face authentication, install the same checkpoint filename manually into models/checkpoints.",
+      "source": "https://huggingface.co/Comfy-Org/flux1-dev"
     }
   ]
 }
