@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^Get-Content \"m:\\\\ComfyUI\\\\custom_nodes\\\\ComfyUI-UltimateUpsacaler\\\\workflows\\\\hyper_tile_sdxl\\.json\" -Raw \\| ConvertFrom-Json \\| Out-Null$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

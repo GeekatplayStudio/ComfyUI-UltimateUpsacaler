@@ -16,6 +16,9 @@
       "name": "TTPlanet Toolset",
       "repo": "https://github.com/TTPlanetPig/Comfyui_TTP_Toolset",
       "directory": "Comfyui_TTP_Toolset",
+      "python_packages": [
+        "opencv-python"
+      ],
       "required": true
     }
   ],
@@ -55,14 +58,17 @@
       "required": false,
       "size": "6.6 GB",
       "optional_group": "flux"
+    },
+    {
+      "name": "flux1-dev-fp8.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors?download=true",
+      "directory": "models/checkpoints",
+      "required": false,
+      "size": "17.2 GB",
+      "optional_group": "flux"
     }
   ],
   "manual_assets": [
-    {
-      "name": "FLUX.1-dev or FLUX.1-schnell base model",
-      "why": "These base checkpoints have separate licensing and are intentionally not auto-downloaded.",
-      "source": "https://huggingface.co/black-forest-labs/FLUX.1-dev"
-    },
     {
       "name": "Florence-2 caption model cache",
       "why": "Downloaded automatically by transformers on first use so it can follow the active Python environment cache rules.",
