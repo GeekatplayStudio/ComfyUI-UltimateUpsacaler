@@ -140,48 +140,6 @@ Important limits:
 
 `profiles/hyper_tile_flux_refiner_profile.json` is a settings profile, not a ComfyUI workflow graph. Use it as a reference after finishing the SDXL pass or when building your own FLUX refinement graph.
 
-## Operational Notes
-
-- Florence captioning downloads its model cache on first use.
-- Hugging Face metadata warnings during Florence setup are expected and are not core ComfyUI load failures.
-- The bundled workflows target standard image save nodes. Alternate output formats may require extra ComfyUI extensions.
-- Third-party nodes, checkpoints, and models retain their own licenses and terms.
-
-See `RELEASE_NOTES.md` for the cleanup and release-hardening summary.
-
-## License
-
-This repository's source code is released under the MIT License. See `LICENSE`.
-
-Important limits:
-
-- It requires a recent ComfyUI build with the FLUX and SD3-era core nodes.
-- It expects `flux1-dev-fp8.safetensors` in `models/checkpoints`.
-- It expects `flux_controlnet_union_pro.safetensors` in `models/controlnet`.
-- The default graph keeps one merged positive prompt across the tile batch. `HyperTile Regional Conditioning` is shipped for advanced graphs, but it is not wired into the default FLUX workflow.
->>>>>>> c083dc8 (Harden release packaging and add Windows installer)
-
-## FLUX Final Pass Profile
-
-`profiles/hyper_tile_flux_refiner_profile.json` is a settings profile, not a ComfyUI workflow graph. Use it as a reference after finishing the SDXL pass or when building your own FLUX refinement graph.
-
-## Operational Notes
-
-- Florence captioning downloads its model cache on first use.
-- Hugging Face metadata warnings during Florence setup are expected and are not core ComfyUI load failures.
-- The bundled workflows target standard image save nodes. Alternate output formats may require extra ComfyUI extensions.
-- Third-party nodes, checkpoints, and models retain their own licenses and terms.
-
-<<<<<<< HEAD
-1. Finish the SDXL workflow first.
-2. Feed the SDXL result into a FLUX tiled workflow of your choice.
-3. Keep denoise low, usually `0.15` to `0.22`.
-4. Use the FLUX union controlnet in tile mode at `0.3` to `0.6` strength.
-5. Keep tiles at `512` on 12-16 GB cards.
-6. The bundled FLUX workflow imports with seam-safer defaults: visible `denoise = 0.18` on `KSampler`, `denoise_adjust = -0.03` available on `HyperTile Planner`, and `padding = 96` on `TTP_Image_Assy`.
-
-If you want the actual ComfyUI graph for that stage instead of only the profile, import `workflows/hyper_tile_flux_tiled_refiner.json`.
-
 ## Help
 
 - Use the SDXL workflow for the first major upscale jump.
@@ -189,15 +147,15 @@ If you want the actual ComfyUI graph for that stage instead of only the profile,
 - Keep tile size at `512` on 12-16 GB GPUs unless you have validated a larger tile budget locally.
 - Florence-2 will populate its cache on first use, so the first caption run is slower than later runs.
 
-## Limits And Notes
+## Operational Notes
 
 - `HyperTile Caption Tiles` downloads Florence-2 into the active Python cache the first time you run it, but the bundled workflows ship with captioning disabled by default.
-- The repeated `404`, unauthenticated Hugging Face, and Florence processor warnings come from the optional Florence caption model probing for alternate metadata files. They are not core ComfyUI model-loading errors.
-- The bundled workflow targets PNG-style image output. EXR and WebP export require additional save nodes or extensions in your ComfyUI install.
+- Hugging Face metadata warnings during Florence setup are expected and are not core ComfyUI model-loading errors.
+- The bundled workflow targets standard image save nodes. Alternate output formats may require extra ComfyUI extensions.
 - The bundled FLUX assets are optional because they are large and many users only need the SDXL production path.
-=======
+- Third-party nodes, checkpoints, and models retain their own licenses and terms.
+
 See `RELEASE_NOTES.md` for the cleanup and release-hardening summary.
->>>>>>> c083dc8 (Harden release packaging and add Windows installer)
 
 ## License
 
