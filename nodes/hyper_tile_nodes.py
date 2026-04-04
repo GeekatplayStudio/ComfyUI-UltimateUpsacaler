@@ -10,6 +10,11 @@ import numpy as np
 from PIL import Image, ImageDraw
 import torch
 
+try:
+    import node_helpers as _node_helpers
+except ImportError:
+    _node_helpers = None  # type: ignore
+
 
 def _tensor_to_pil(image_tensor: torch.Tensor) -> Image.Image:
     array = image_tensor.detach().cpu().numpy()
@@ -116,6 +121,40 @@ def _resolve_target_size(
     return target_width, target_height, upscale_ratio
 
 
+def _caption_grid_dimensions(image_width: int, image_height: int, max_tiles: int) -> Tuple[int, int]:
+    max_tiles = max(int(max_tiles), 1)
+    aspect_ratio = image_width / max(image_height, 1)
+
+    cols = max(1, round(math.sqrt(max_tiles * aspect_ratio)))
+    rows = max(1, round(max_tiles / cols))
+
+    while cols * rows > max_tiles:
+        if cols > rows and cols > 1:
+            cols -= 1
+        elif rows > 1:
+            rows -= 1
+        else:
+            break
+
+    current_error = abs((cols / max(rows, 1)) - aspect_ratio)
+
+    while (cols + 1) * rows <= max_tiles:
+        candidate_error = abs(((cols + 1) / rows) - aspect_ratio)
+        if candidate_error > current_error:
+            break
+        cols += 1
+        current_error = candidate_error
+
+    while cols * (rows + 1) <= max_tiles:
+        candidate_error = abs((cols / (rows + 1)) - aspect_ratio)
+        if candidate_error >= current_error:
+            break
+        rows += 1
+        current_error = candidate_error
+
+    return cols, rows
+
+
 def _resample_filter(method: str) -> int:
     mapping = {
         "nearest": Image.Resampling.NEAREST,
@@ -150,7 +189,7 @@ def _load_caption_stack(model_name: str):
     try:
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            dtype=dtype,
+            torch_dtype=dtype,
             trust_remote_code=True,
         )
     except AttributeError as exc:
@@ -163,7 +202,7 @@ def _load_caption_stack(model_name: str):
         language_config_class.forced_bos_token_id = None
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            dtype=dtype,
+            torch_dtype=dtype,
             trust_remote_code=True,
         )
 
@@ -255,6 +294,12 @@ class HyperTilePlanner:
     FUNCTION = "plan"
     CATEGORY = f"{BRAND_ROOT}/Upscale"
 
+    @classmethod
+    def IS_CHANGED(cls, image, **kwargs):
+        # Return a value that changes whenever the image tensor changes so ComfyUI
+        # doesn't serve a cached result when a new image is loaded.
+        return float(image.sum())
+
     def plan(
         self,
         image: torch.Tensor,
@@ -310,6 +355,9 @@ class HyperTilePlanner:
         if upscale_ratio >= 6.0 and tile_size > 512:
             tile_size = 512
 
+        # Enable tiled decode when the output is large enough to risk OOM on a full decode
+        tiled_decode = max(target_width, target_height) >= 2048 or vram_gb <= 12
+
         tiles_x = max(math.ceil(target_width / max(tile_size, 1)), 1)
         tiles_y = max(math.ceil(target_height / max(tile_size, 1)), 1)
         preview_text = (
@@ -331,7 +379,7 @@ class HyperTilePlanner:
             "tiles_y": int(tiles_y),
             "batch_size": int(batch_size),
             "denoise": round(float(denoise), 3),
-            "tiled_decode": True,
+            "tiled_decode": tiled_decode,
             "notes": preview_text,
         }
         return (
@@ -339,7 +387,7 @@ class HyperTilePlanner:
             int(tile_size),
             int(batch_size),
             float(round(denoise, 3)),
-            True,
+            bool(tiled_decode),
             json.dumps(profile, indent=2),
             int(image_width),
             int(image_height),
@@ -392,11 +440,29 @@ class HyperTileCaptionTiles:
             fallback_prompt = ", ".join(_dedupe_segments([prefix, suffix]))
             return fallback_prompt, "Captioning disabled; using fallback prompt only."
 
+        # Use the first frame and split it into a spatial grid of tiles to caption
+        base_pil = _tensor_to_pil(image[:1]).convert("RGB")
+        img_w, img_h = base_pil.size
+
+        # Determine a spatial grid that uses the tile budget without collapsing to a square-root subset.
+        cols, rows = _caption_grid_dimensions(img_w, img_h, max_tiles)
+        tile_w = math.ceil(img_w / cols)
+        tile_h = math.ceil(img_h / rows)
+
+        spatial_tiles: List[Image.Image] = []
+        for row in range(rows):
+            for col in range(cols):
+                left = col * tile_w
+                top = row * tile_h
+                right = min(left + tile_w, img_w)
+                bottom = min(top + tile_h, img_h)
+                spatial_tiles.append(base_pil.crop((left, top, right, bottom)))
+
         captions: List[str] = []
-        for index, tile in enumerate(image[:max_tiles]):
+        for index, tile in enumerate(spatial_tiles):
             try:
                 caption = _caption_florence(
-                    _tensor_to_pil(tile.unsqueeze(0)).convert("RGB"),
+                    tile,
                     model_name=model_name,
                     detail_level=detail_level,
                     max_new_tokens=max_new_tokens,
@@ -486,6 +552,23 @@ class HyperTileResizeImage:
         if image.shape[1] == target_height and image.shape[2] == target_width:
             return (image,)
 
+        # Use torch interpolate for GPU-accelerated resize when possible (bilinear/bicubic/nearest).
+        # Fall back to PIL for lanczos which torch doesn't support.
+        torch_mode_map = {"bilinear": "bilinear", "bicubic": "bicubic", "nearest": "nearest"}
+        if method in torch_mode_map:
+            # image is [B, H, W, C] in ComfyUI; interpolate expects [B, C, H, W]
+            x = image.permute(0, 3, 1, 2)
+            align = False if method in ("bilinear", "bicubic") else None
+            kwargs = {"align_corners": align} if align is not None else {}
+            x = torch.nn.functional.interpolate(
+                x.float(),
+                size=(target_height, target_width),
+                mode=torch_mode_map[method],
+                **kwargs,
+            )
+            return (x.permute(0, 2, 3, 1).clamp(0.0, 1.0),)
+
+        # lanczos — PIL path
         resized_batches = []
         resample = _resample_filter(method)
         for frame in image:
@@ -537,7 +620,8 @@ class HyperTileTilePreview:
             draw.line([(0, y), (target_width, y)], fill=(255, 196, 0), width=line_width)
 
         label = f"{target_width}x{target_height} | {tiles_x}x{tiles_y} tiles @ {tile_width}x{tile_height}"
-        draw.rectangle([(12, 12), (min(target_width - 12, 12 + len(label) * 8), 44)], fill=(0, 0, 0))
+        text_w = int(draw.textlength(label))
+        draw.rectangle([(12, 12), (min(target_width - 12, 12 + text_w + 12), 44)], fill=(0, 0, 0))
         draw.text((18, 18), label, fill=(255, 255, 255))
         return (_pil_to_tensor(resized), label)
 
@@ -576,7 +660,10 @@ class HyperTileRegionalConditioning:
         fallback_to_base_prompt: bool,
         base_conditioning=None,
     ):
-        import node_helpers
+        if _node_helpers is None:
+            raise RuntimeError(
+                "node_helpers is not available. Make sure you are running inside ComfyUI."
+            )
 
         prompts_by_tile = _parse_tile_captions(captions)
         output_conditioning = list(base_conditioning) if base_conditioning is not None else []
@@ -607,7 +694,7 @@ class HyperTileRegionalConditioning:
                 continue
 
             encoded = _encode_text_conditioning(clip, prompt_text)
-            conditioned_tile = node_helpers.conditioning_set_values(
+            conditioned_tile = _node_helpers.conditioning_set_values(
                 encoded,
                 {
                     "area": (tile_height // 8, tile_width // 8, top // 8, left // 8),

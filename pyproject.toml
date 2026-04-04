@@ -1,17 +1,38 @@
 [project]
 name = "comfyui-hyper-tile-upscaler"
 version = "0.1.0"
-description = "Geekatplay Studio tiled generative upscale helpers for ComfyUI"
+description = "Tiled generative upscale helpers and installer tooling for ComfyUI"
+readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
+authors = [
+    { name = "GeekatplayStudio" },
+]
+keywords = ["ComfyUI", "upscaling", "image-processing", "generative-ai"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+]
 dependencies = [
     "numpy>=1.24.0",
     "Pillow>=10.0.0",
-    "transformers>=4.44.0",
+]
+
+[project.optional-dependencies]
+captioning = [
     "accelerate>=0.33.0",
     "huggingface-hub>=0.24.0",
     "sentencepiece>=0.2.0",
     "timm>=1.0.0",
+    "transformers>=4.44.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/GeekatplayStudio/ComfyUI-UltimateUpsacaler"
+Repository = "https://github.com/GeekatplayStudio/ComfyUI-UltimateUpsacaler"
 
 [build-system]
 requires = ["setuptools>=68.0"]

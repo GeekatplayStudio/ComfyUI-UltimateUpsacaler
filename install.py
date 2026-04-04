@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -15,6 +16,7 @@ import urllib.request
 REPO_ROOT = Path(__file__).resolve().parent
 MANIFEST_PATH = REPO_ROOT / "manifests" / "dependencies.json"
 INSTALLER_NAME = "Geekatplay Studio HyperTile Installer"
+PIP_INSTALL_ARGS = ["--disable-pip-version-check", "--no-input"]
 
 
 def load_manifest() -> dict:
@@ -53,9 +55,13 @@ def discover_comfyui_root(explicit_path: str | None) -> Path:
 def discover_comfyui_python(comfy_root: Path) -> list[str]:
     candidates = [
         comfy_root / ".venv" / "Scripts" / "python.exe",
+        comfy_root / ".venv" / "bin" / "python",
         comfy_root / "venv" / "Scripts" / "python.exe",
+        comfy_root / "venv" / "bin" / "python",
         comfy_root.parent / "python_embeded" / "python.exe",
+        comfy_root.parent / "python_embeded" / "python",
         comfy_root.parent / "python_embedded" / "python.exe",
+        comfy_root.parent / "python_embedded" / "python",
     ]
 
     for candidate in candidates:
@@ -66,7 +72,8 @@ def discover_comfyui_python(comfy_root: Path) -> list[str]:
 
 
 def run_command(command: list[str], cwd: Path | None = None) -> None:
-    print(f"[run] {' '.join(command)}")
+    formatted_command = subprocess.list2cmdline(command) if os.name == "nt" else shlex.join(command)
+    print(f"[run] {formatted_command}")
     subprocess.run(command, cwd=str(cwd) if cwd else None, check=True)
 
 
@@ -78,7 +85,7 @@ def install_python_packages(
     if dry_run:
         print(f"[skip] dry run: would install packages: {', '.join(package_names)}")
         return
-    run_command([*python_command, "-m", "pip", "install", *package_names], cwd=cwd)
+    run_command([*python_command, "-m", "pip", "install", *PIP_INSTALL_ARGS, *package_names], cwd=cwd)
 
 
 def load_pyproject_dependencies(pyproject_path: Path) -> list[str]:
@@ -100,7 +107,7 @@ def install_python_requirements(python_command: list[str], dry_run: bool) -> Non
         if dry_run:
             print(f"[skip] dry run: would install {requirements_path}")
             return
-        run_command([*python_command, "-m", "pip", "install", "-r", str(requirements_path)])
+        run_command([*python_command, "-m", "pip", "install", *PIP_INSTALL_ARGS, "-r", str(requirements_path)])
 
 
 def run_nested_installer(node_path: Path, python_command: list[str], dry_run: bool) -> None:
@@ -117,7 +124,7 @@ def run_nested_installer(node_path: Path, python_command: list[str], dry_run: bo
     if install_script.exists():
         run_command([*python_command, str(install_script)], cwd=node_path)
     elif requirements_path.exists():
-        run_command([*python_command, "-m", "pip", "install", "-r", str(requirements_path)], cwd=node_path)
+        run_command([*python_command, "-m", "pip", "install", *PIP_INSTALL_ARGS, "-r", str(requirements_path)], cwd=node_path)
     elif pyproject_dependencies:
         install_python_packages(python_command, pyproject_dependencies, dry_run=dry_run, cwd=node_path)
 

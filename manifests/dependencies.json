@@ -30,24 +30,7 @@
       "directory": "models/upscale_models",
       "required": true,
       "size": "67 MB"
-    },
-    {
-      "name": "RealESRGAN_x4plus.pth",
-      "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
-      "source": "https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.1.0",
-      "directory": "models/upscale_models",
-      "required": true,
-      "size": "64 MB"
-    },
-    {
-      "name": "realesr-general-x4v3.pth",
-      "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth",
-      "source": "https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.2.5.0",
-      "directory": "models/upscale_models",
-      "required": false,
-      "size": "17 MB"
-    },
-    {
+      "name": "sdxl_base_1.0.safetensors",
       "name": "sdxl_base_1.0.safetensors",
       "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors?download=true",
       "source": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
@@ -56,6 +39,14 @@
       "size": "6.9 GB"
     },
     {
+      "source": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
+      "directory": "models/checkpoints",
+      "required": true,
+      "size": "6.9 GB"
+    },
+    {
+=======
+>>>>>>> c083dc8 (Harden release packaging and add Windows installer)
       "name": "controlnet_tile_sdxl_1_0.safetensors",
       "url": "https://huggingface.co/xinsir/controlnet-tile-sdxl-1.0/resolve/main/diffusion_pytorch_model.safetensors?download=true",
       "source": "https://huggingface.co/xinsir/controlnet-tile-sdxl-1.0",
