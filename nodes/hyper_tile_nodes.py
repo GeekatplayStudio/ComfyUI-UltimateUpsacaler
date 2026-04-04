@@ -10,6 +10,9 @@ import numpy as np
 from PIL import Image, ImageDraw
 import torch
 
+
+BRAND_ROOT = "Geekatplay HyperTile"
+
 try:
     import node_helpers as _node_helpers
 except ImportError:
